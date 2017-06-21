@@ -1,12 +1,53 @@
+# -*- coding: cp1252 -*-
 import xlrd
 import re
+import tldextract
+import esm
 import json
 
-def retArrayOfDomains(str):
-    myregex = r'(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}'
-    return (re.findall(myregex, str))
 
-def arrayCountNlpKeywords(sentence):
+def extractUrl(text, match):
+	pretld, posttld = None, None
+	url = ""
+
+	tld = match[1]
+	startpt, endpt = match[0][0], match[0][1]
+
+	# check the next character is valid
+	if len(text) > endpt:
+		nextcharacter = text[endpt]
+		if re.match("[a-z0-9-.]", nextcharacter):
+			return None
+
+		posttld = re.match(':?[0-9]*[/[!#$&-;=?a-z]+]?', text[endpt:])
+	pretld = re.search('[a-z0-9-.]+?$', text[:startpt])
+
+	if pretld:
+		url = pretld.group(0)
+		startpt -= len(pretld.group(0))
+	url += tld
+	if posttld:
+		url += posttld.group(0)		
+		endpt += len(posttld.group(0))
+
+	# if it ends with a . or , strip it because it's probably unintentional
+	url = url.rstrip(",.") 
+
+	return (startpt, endpt), url
+
+def getUrls(text):
+	results = []
+	tlds = (tldextract.TLDExtract()._get_tld_extractor().tlds)
+	tldindex = esm.Index()
+	for tld in tlds:
+		tldindex.enter("." + tld.encode("idna"))
+	tldindex.fix()
+	tldsfound = tldindex.query(text)
+	results = [extractUrl(text, tld) for tld in tldsfound]
+	results = [x for x in results if x] # remove nulls
+	return results
+    
+def arrayCountNlpKeywords(sentence): #wtf is this
     data = {}
     data["javascript"] = sentence.lower().count('javascript')
     data["numPeriods"] = sentence.count('.')
@@ -51,9 +92,6 @@ def importExcelSheetIndicators(filename):
 
     return data
 
-def jsonCountNlpKeywords(sentence):
-    print json.dumps(arrayCountNlpKeywords(sentence), ensure_ascii=False)
-
 def appendCalculatedWordPoints(sentence, data):
     for i in range(len(data)):
         category = data[i][0]
@@ -82,26 +120,73 @@ def tallyTotalPerCategory(categories, data):
         categoryTotal.append([categories[i], total])
     return categoryTotal
 
+def returnHighestCategory(categoryTotals):
+    highestCategory = ['None', -1]
+    for i in range(len(categoryTotals)):
+        category = categoryTotals[i][0]
+        points = categoryTotals[i][1]
+        if (points > highestCategory[1]):
+            highestCategory = categoryTotals[i]
+    return highestCategory
 
-def main():
-    sentence = ('hello there... JAvASCripT - Stainless steel..stainless steel as seen on')
+def loadDomains():
+    df = open('fuzzydomains.csv', 'r')
+    domainDict = {}
+    original = ''
+    for line in df:
+        row = line.split(',')
+        if row[0] in 'Original*':
+            original = row[1]
+            domainDict[row[1]] = 0
+        elif row[0] not in 'fuzzer':
+            domainDict[row[1]] = original
+    df.close()
+    return domainDict
+
+domains = loadDomains()
+            
+def assess(sentence):
     sentence = sentence.strip().lower()
 
-    print sentence
-    jsonCountNlpKeywords(sentence)
+    #print sentence
+    #jsonCountNlpKeywords(sentence)
 
-    print(retArrayOfDomains("this is just an example https://subdomain.google.co.uk"))
-    print(len(retArrayOfDomains("this is just an example https://subdomain.google.co.uk")))
+    #print(retArrayOfDomains("this is just an example https://subdomain.google.co.uk"))
+    #print(len(retArrayOfDomains("this is just an example https://subdomain.google.co.uk")))
 
-    data = importExcelSheetIndicators("example.xlsx")
+    data = importExcelSheetIndicators("example.xlsx") #should implement n-gram, normalization, lemmetizer
     data = appendCalculatedWordPoints(sentence, data)
 
-    print data
+    #print data
     categories = arrayOfCategories(data)
 
     categoryTotals = tallyTotalPerCategory(categories, data)
-    print categoryTotals
+    #print categoryTotals
 
+    highestCategory = returnHighestCategory(categoryTotals)
+    #print "\nHighest Category: \n", highestCategory[0], "\nPoints: \n", highestCategory[1]
+    allDomains = []
+    urls = {}
+    for url in getUrls(sentence):
+        domainObject = {}
+        if url[1] not in urls: 
+            if url[1] in domains:
+                #domainObject.append(json.dumps({'url':url[1] ,'spoofedAs':domains[url[1]]}))
+                domainObject['url'] = url[1]
+                domainObject['spoofedAs'] = domains[url[1]]
+                urls[url[1]] = domains[url[1]]
+            else:
+                urls[url[1]] = "no spoof found"
+                domainObject['url'] = url[1]
+                domainObject['spoofedAs'] = 0
+        allDomains.append(domainObject)
+                #domainObject.append(json.dumps({'url':url[1] ,'spoofedAs':0}))
+    category= highestCategory[0].encode('ascii','ignore')
+    weight = str(highestCategory[1]).encode('ascii','ignore')
+    
+    
+    return json.dumps({'category': category, 'categoryWeight' : weight , 'domains': [domain for domain in allDomains] })
+    #return highestCategory, urls
+sentence = ('hello there... JAvASCripT - Stainless steel..stainless steel as seen on facebook.com google.com facebookw.com goo.gle television.com derit.co.uk http://hermit.co')
+print assess(sentence)
 
-
-main()

@@ -10,17 +10,17 @@ def install_and_import(package):
         globals()[package] = importlib.import_module(package)
 
 
-install_and_import('requests')
+#install_and_import('requests')
 #install_and_import('file')
-install_and_import('lxml')
-install_and_import('nltk')
-nltk.download('all')
+#install_and_import('lxml')
+#install_and_import('nltk')
+#nltk.download('all')
 #dler = nltk.downloader.Downloader()
 #dler._update_index()
 #dler._status_cache['panlex_lite'] = 'installed' # Trick the index to treat panlex_lite as it's already installed.
 #dler.download('all')
 
-install_and_import('requests')
+#install_and_import('requests')
 
 import os
 import glob
@@ -42,8 +42,8 @@ def scrapePage(url, pattern):
 
 def topTargets():
     #from moz.com
-    urls = scrapePage("httpledddfds://moz.com/top500",'//a[@target="_blank"]/text()')
-    print urls
+    urls = scrapePage("https://moz.com/top500",'//a[@target="_blank"]/text()')
+    return urls
     
 def normalize(s):
     for p in string.punctuation:
@@ -65,7 +65,7 @@ def detectLang(text):
         languages_ratios[language] = len(common_elements)
 
     most_rated_language = max(languages_ratios, key=languages_ratios.get)
-    print(languages_ratios)
+    #print(languages_ratios)
     return most_rated_language
 
 def detectAll(path):
@@ -78,6 +78,6 @@ def detectAll(path):
 
 
 
-detectAll(os.getcwd())
+#detectAll(os.getcwd())
 #urls = scrapePage("https://moz.com/top500",'//a[@target="_blank"]/text()')
 #print urls

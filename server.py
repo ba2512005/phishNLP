@@ -5,18 +5,32 @@ import os
 import json
 from waitress import serve
 import enronspamfilter
+import category as getCategory
+import detectLang
+import dnstwist.dnstwist as dns
 
 class NLPcaller:
     def on_get(self, req, resp):
         """Handles GET requests"""
         msg2 = ''' Usage: 
-        POST to /nlp with the format: {"body" : "<message content you want to test>"}
+        POST to /nlp with the format:
+        {
+        "fromHeader" : "<message content you want to test>"
+        "replyToHeader" : "<message content you want to test>"
+        "emailBody" : "<message content you want to test>"
+        
+        }
 
         response looks like this:
         {
-          "spamDetected": 1,
-          "category": "finance",
-          "riskWeight": ".6"
+          "category": "financial - general",
+          "spamDetected": "1",
+          "domains": [
+            "www.letthestoriesliveon.com",
+            "purchase.we"
+          ],
+          "categoryWeight": "2.0",
+          "language": "english"
         }
         '''
         resp.body = (msg2)
@@ -29,21 +43,29 @@ class NLPcaller:
             raise falcon.HTTPError(falcon.HTTP_400, 'Error',ex.message)
         try:
             inputs = json.loads(raw_json, encoding='cp1252')
-            result = enronspamfilter.predicter(inputs['body'])
-            det = str(result)[2]
-            resp.body = ('{"spam_detected" : '+det+', "category" : "finance" , "risk" : ".6"}')
+            body = inputs['emailBody']
+            fromHeader = inputs['fromHeader']
+            toHeader = inputs['toHeader']
+            
+            language = detectLang.detectLang(body)
+            detector = enronspamfilter.predicter(body)
+            cat, domains = getCategory.assess(body)
+            
+            det = str(detector)[2]
+
+            category =  cat[0].encode('ascii', 'ignore')
+            weight = str(cat[1]).encode('ascii', 'ignore')
+            domains = [domain.encode('ascii', 'ignore') for domain in domains]
+            resp.body = json.dumps({'spamDetected' : det,'language': language , 'category': category, 'categoryWeight' : weight , 'domains': domains })
             #insert categorizer here
         except ValueError:
-            raise falcon.HTTPError(falcon.HTTP_400,'Invalid JSON','Could not decode the request body. The ''JSON was incorrect.')
+            raise falcon.HTTPError(falcon.HTTP_400,'Invalid JSON','Could not decode the request body. The ''JSON was incorrect. Call a GET on this URL for usage info.')
 
  
 class ThingsResource:
     def on_get(self, req, resp):
         """Handles GET requests"""
-        resp.body = ('\nI\'ve always been more interested in\n'\
-                     'the future than in the past.\n'\
-                     '\n'\
-                     '    ~ Grace Hopper\n\n')
+        resp.body = ('try /nlp')
     
     def on_post(self, req, resp):
          
