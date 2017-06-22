@@ -48,16 +48,52 @@ class NLPcaller:
             fromHeader = inputs['fromHeader']
             toHeader = inputs['toHeader']
             replyToHeader = inputs['replyToHeader']
-            target = targetsBuilder.getTarget(toHeader)
+            target, targetWeight = targetsBuilder.getTarget(toHeader)
             
             language = detectLang.detectLang(body)  
             detector = enronspamfilter.predicter(body)
-            catdomains = getCategory.assess(body)
-            
-            det = str(detector)[2]
+            assessment = getCategory.assess(body, fromHeader, replyToHeader)
 
-            resp.body = json.dumps({'spamDetected' : det,'language': language , 'categories': catdomains, 'targetType':target[0]})
-            #insert categorizer here
+            category = assessment['category']
+            spoofCount = assessment['spoofedUrlCount']
+            headerFraud = assessment['headerFraud']
+            mismatchedHref = len(assessment['mismatchedHref'])
+
+            confidence = 0 #get confidence level of things based on indicators
+            det = str(detector)[2]
+            if spoofCount>=1 and det == '1':
+                category = "phish - " + category
+                confidence = 1
+            elif spoofCount == 0 and det == '1':
+                category = "spam - " + category
+                confidence = .75
+            elif spoofCount>=1 and det == '0':
+                category = "phish -" + category
+                confidence = .5
+            elif spoofCount == 0 and det == '0':
+                confidence = .75
+            else:
+                confidence = .66
+
+            print spoofCount
+            print confidence
+            print mismatchedHref
+            
+
+            contentRisk = float(spoofCount + headerFraud + mismatchedHref)/3
+            risk = contentRisk * targetWeight * confidence
+            
+            assessment['spamDetected'] = det
+            assessment['language'] = language
+            assessment['targetType'] = target
+            assessment['confidence'] = confidence
+            assessment['contentRisk'] = contentRisk
+            assessment['risk'] = risk 
+            
+            
+            #print assessment
+    
+            resp.body = json.dumps(assessment)
         except ValueError:
             raise falcon.HTTPError(falcon.HTTP_400,'Invalid JSON','Could not decode the request body. The ''JSON was incorrect. Call a GET on this URL for usage info.')
 

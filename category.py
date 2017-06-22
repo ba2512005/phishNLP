@@ -150,8 +150,8 @@ def loadDomains():
 
 def fromReplyToComparison(emailFrom, emailReplyTo):
     if (emailFrom == emailReplyTo):
-        return True
-    return False
+        return 0
+    return 1
 
 def isHtmlInBody(body):
     return bool(bs4.BeautifulSoup(body, "html.parser").find())
@@ -172,7 +172,7 @@ def returnDifferentHrefs(hrefArray):
 
 domains = loadDomains()
             
-def assess(sentence):
+def assess(sentence, emailFrom, emailReplyTo):
     sentence = sentence.strip().lower()
 
     #print sentence
@@ -194,7 +194,10 @@ def assess(sentence):
     #print "\nHighest Category: \n", highestCategory[0], "\nPoints: \n", highestCategory[1]
     allDomains = []
     urls = {}
+    spoofCount = 0
+    nonSpoofCount = 0
     for url in getUrls(sentence):
+        print url
         domainObject = {}
         if url[1] not in urls: 
             if url[1] in domains:
@@ -202,41 +205,58 @@ def assess(sentence):
                 domainObject['url'] = url[1]
                 domainObject['spoofedAs'] = domains[url[1]]
                 urls[url[1]] = domains[url[1]]
+                spoofCount+=1
+                
             else:
                 urls[url[1]] = "no spoof found"
                 domainObject['url'] = url[1]
                 domainObject['spoofedAs'] = 0
+                nonSpoofCount +=1
         allDomains.append(domainObject)
                 #domainObject.append(json.dumps({'url':url[1] ,'spoofedAs':0}))
     category= highestCategory[0].encode('ascii','ignore')
     weight = str(highestCategory[1]).encode('ascii','ignore')
     
     
+    
     ####################################return json.dumps({'category': category, 'categoryWeight' : weight , 'domains': [domain for domain in allDomains] })
     #counts number of periods in the body
-    emailFrom = "mohammed.kassem@ge.com"
-    emailReplyTo = "mohammed.kassem@ge.com"
+    #emailFrom = "mohammed.kassem@ge.com"
+    #emailReplyTo = "mohammed.kassem@ge.com"
 
     emailFrom = emailFrom.strip().lower()
     emailReplyTo = emailReplyTo.strip().lower()
     
-    print countNumberOfPeriods(sentence)
+    #print countNumberOfPeriods(sentence)
 
     #counts number of periods in the url
 
     fromReplyToCheck = fromReplyToComparison(emailFrom, emailReplyTo)
-    print "ReplyTo and From Header Comparison: ", fromReplyToCheck
+    
+    
+    #print "ReplyTo and From Header Comparison: ", fromReplyToCheck
 
-    sentence2 = "<html><a href='test.com'>sfdfs</a><a href='test.com'>test.com</a></html>"
-    print "HTML in body: ", isHtmlInBody(sentence2)
-    hRefs = returnHrefs(sentence2)
+    #sentence2 = "<html><a href='test.com'>sfdfs</a><a href='test.com'>test.com</a></html>"
+    #print "HTML in body: ", isHtmlInBody(sentence2)
+    #hRefs = returnHrefs(sentence2)
 
-    print "hrefs: ", hRefs
+    #print "hrefs: ", hRefs
 
-    differenthRefs = returnDifferentHrefs(hRefs)
-    print "Different hRefs: ", differenthRefs
-
-    #return highestCategory, urls
-sentence = ("As one of our top customers we are providing 10% OFF the total of your next used book purchase from www.letthestoriesliveon.com . Please use the promotional code, TOPTENOFF at checkout. Limited to 1 use per customer. All books have free shipping within the contiguous 48 United States and there is no minimum purchase.We have millions of used books in stock that are up to 90% off MRSP and add tens of thousands of new items every day. Don't forget to check back frequently for new arrivals.")
-print assess(sentence)
+    #differenthRefs = returnDifferentHrefs(hRefs)
+    #print "Different hRefs: ", differenthRefs
+    
+    catObject = {}
+    catObject['category']=category
+    catObject['categoryWeight']= weight 
+    catObject['domains']=[domain for domain in allDomains]
+    catObject['headerFraud']= fromReplyToCheck
+    catObject['htmlInBody']= int(isHtmlInBody(sentence))
+    catObject['mismatchedHref']= returnDifferentHrefs(returnHrefs(sentence))
+    catObject['spoofedUrlCount']=spoofCount
+    
+    return catObject
+#sentence = ("As one of our top customers we are providing 10% OFF the total of your next used book purchase g00gle.com from www.letthestoriesliveon.com . Please use the promotional code, TOPTENOFF at checkout. Limited to 1 use per customer. All books have free shipping within the contiguous 48 United States and there is no minimum purchase.We have millions of used books in stock that are up to 90% off MRSP and add tens of thousands of new items every day. Don't forget to check back frequently for new arrivals.")
+#emailFrom = 'sofyan.saputra@ge.com'
+#emailReplyTo = 'sofyan.s4putra@ge.com'
+#print assess(sentence, emailFrom, emailReplyTo)
 
