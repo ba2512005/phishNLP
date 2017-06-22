@@ -7,6 +7,7 @@ from waitress import serve
 import enronspamfilter
 import category as getCategory
 import detectLang
+import targetsBuilder
 import dnstwist.dnstwist as dns
 
 class NLPcaller:
@@ -15,8 +16,9 @@ class NLPcaller:
         msg2 = ''' Usage: 
         POST to /nlp with the format:
         {
-        "fromHeader" : "<message content you want to test>"
-        "replyToHeader" : "<message content you want to test>"
+        "fromHeader" : "<goodemail@ge.com>"
+        "toHeader"" : "<uncle.jeff@ge.com>"
+        "replyToHeader" : "<badspammer@gg.com>"
         "emailBody" : "<message content you want to test>"
         
         }
@@ -26,8 +28,7 @@ class NLPcaller:
           "category": "financial - general",
           "spamDetected": "1",
           "domains": [
-            "www.letthestoriesliveon.com",
-            "purchase.we"
+            "www.letthestoriesliveon.com"
           ],
           "categoryWeight": "2.0",
           "language": "english"
@@ -46,17 +47,16 @@ class NLPcaller:
             body = inputs['emailBody']
             fromHeader = inputs['fromHeader']
             toHeader = inputs['toHeader']
+            replyToHeader = inputs['replyToHeader']
+            target = targetsBuilder.getTarget(toHeader)
             
-            language = detectLang.detectLang(body)
+            language = detectLang.detectLang(body)  
             detector = enronspamfilter.predicter(body)
-            cat, domains = getCategory.assess(body)
+            catdomains = getCategory.assess(body)
             
             det = str(detector)[2]
 
-            category =  cat[0].encode('ascii', 'ignore')
-            weight = str(cat[1]).encode('ascii', 'ignore')
-            domains = [domain.encode('ascii', 'ignore') for domain in domains]
-            resp.body = json.dumps({'spamDetected' : det,'language': language , 'category': category, 'categoryWeight' : weight , 'domains': domains })
+            resp.body = json.dumps({'spamDetected' : det,'language': language , 'categories': catdomains, 'targetType':target[0]})
             #insert categorizer here
         except ValueError:
             raise falcon.HTTPError(falcon.HTTP_400,'Invalid JSON','Could not decode the request body. The ''JSON was incorrect. Call a GET on this URL for usage info.')
@@ -94,4 +94,4 @@ api.add_route('/nlp', NLP)
 
 
 #dev on localhost
-serve(api, host='0.0.0.0', port=5555)
+serve(api, host='0.0.0.0', port=80)

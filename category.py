@@ -4,6 +4,8 @@ import re
 import tldextract
 import esm
 import json
+import bs4
+import BeautifulSoup
 
 
 def extractUrl(text, match):
@@ -129,6 +131,9 @@ def returnHighestCategory(categoryTotals):
             highestCategory = categoryTotals[i]
     return highestCategory
 
+def countNumberOfPeriods(body):
+    return body.lower().count('.')
+
 def loadDomains():
     df = open('fuzzydomains.csv', 'r')
     domainDict = {}
@@ -142,6 +147,28 @@ def loadDomains():
             domainDict[row[1]] = original
     df.close()
     return domainDict
+
+def fromReplyToComparison(emailFrom, emailReplyTo):
+    if (emailFrom == emailReplyTo):
+        return True
+    return False
+
+def isHtmlInBody(body):
+    return bool(bs4.BeautifulSoup(body, "html.parser").find())
+
+def returnHrefs(body):
+    hRefs = []
+    soup = BeautifulSoup.BeautifulSoup(body)
+    for link in soup.findAll("a"):
+        hRefs.append([link, link.get("href"), link.string])
+    return hRefs
+
+def returnDifferentHrefs(hrefArray):
+    differentHrefValues = []
+    for href in hrefArray:
+        if (href[1].strip().lower()) != (href[2].strip().lower()):
+            differentHrefValues.append(href)
+    return differentHrefValues
 
 domains = loadDomains()
             
@@ -185,8 +212,31 @@ def assess(sentence):
     weight = str(highestCategory[1]).encode('ascii','ignore')
     
     
-    return json.dumps({'category': category, 'categoryWeight' : weight , 'domains': [domain for domain in allDomains] })
+    ####################################return json.dumps({'category': category, 'categoryWeight' : weight , 'domains': [domain for domain in allDomains] })
+    #counts number of periods in the body
+    emailFrom = "mohammed.kassem@ge.com"
+    emailReplyTo = "mohammed.kassem@ge.com"
+
+    emailFrom = emailFrom.strip().lower()
+    emailReplyTo = emailReplyTo.strip().lower()
+    
+    print countNumberOfPeriods(sentence)
+
+    #counts number of periods in the url
+
+    fromReplyToCheck = fromReplyToComparison(emailFrom, emailReplyTo)
+    print "ReplyTo and From Header Comparison: ", fromReplyToCheck
+
+    sentence2 = "<html><a href='test.com'>sfdfs</a><a href='test.com'>test.com</a></html>"
+    print "HTML in body: ", isHtmlInBody(sentence2)
+    hRefs = returnHrefs(sentence2)
+
+    print "hrefs: ", hRefs
+
+    differenthRefs = returnDifferentHrefs(hRefs)
+    print "Different hRefs: ", differenthRefs
+
     #return highestCategory, urls
-sentence = ('hello there... JAvASCripT - Stainless steel..stainless steel as seen on facebook.com google.com facebookw.com goo.gle television.com derit.co.uk http://hermit.co')
+sentence = ("As one of our top customers we are providing 10% OFF the total of your next used book purchase from www.letthestoriesliveon.com . Please use the promotional code, TOPTENOFF at checkout. Limited to 1 use per customer. All books have free shipping within the contiguous 48 United States and there is no minimum purchase.We have millions of used books in stock that are up to 90% off MRSP and add tens of thousands of new items every day. Don't forget to check back frequently for new arrivals.")
 print assess(sentence)
 
