@@ -25,13 +25,32 @@ class NLPcaller:
 
         response looks like this:
         {
-          "category": "financial - general",
-          "spamDetected": "1",
-          "domains": [
-            "www.letthestoriesliveon.com"
-          ],
-          "categoryWeight": "2.0",
-          "language": "english"
+            "category": "financial - general",
+            "headerFraud": 1,
+            "confidence": 1,
+            "language": "english",
+            "categoryWeight": "2.0",
+            "targetType": "Employee",
+            "spamDetected": "1",
+            "htmlInBody": 0,
+            "mismatchedHref": [],
+            "domains": [
+                {
+                    "url": "g00gle.com",
+                    "spoofedAs": "google.com"
+                },
+                {
+                    "url": "turdlogger.com",
+                    "spoofedAs": 0
+                },
+                {
+                    "url": "www.letthestoriesliveon.com",
+                    "spoofedAs": 0
+                }
+            ],
+            "spoofedUrlCount": 1,
+            "risk": 0.6666666666666666,
+            "contentRisk": 0.6666666666666666
         }
         '''
         resp.body = (msg2)
