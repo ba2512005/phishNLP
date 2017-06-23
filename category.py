@@ -197,7 +197,7 @@ def assess(sentence, emailFrom, emailReplyTo):
     spoofCount = 0
     nonSpoofCount = 0
     for url in getUrls(sentence):
-        print url
+        #print url
         domainObject = {}
         if url[1] not in urls: 
             if url[1] in domains:
@@ -205,7 +205,8 @@ def assess(sentence, emailFrom, emailReplyTo):
                 domainObject['url'] = url[1]
                 domainObject['spoofedAs'] = domains[url[1]]
                 urls[url[1]] = domains[url[1]]
-                spoofCount+=1
+                if domains[url[1]] != 0:
+                        spoofCount+=1
                 
             else:
                 urls[url[1]] = "no spoof found"
@@ -224,15 +225,18 @@ def assess(sentence, emailFrom, emailReplyTo):
     #emailFrom = "mohammed.kassem@ge.com"
     #emailReplyTo = "mohammed.kassem@ge.com"
 
-    emailFrom = emailFrom.strip().lower()
-    emailReplyTo = emailReplyTo.strip().lower()
+    
     
     #print countNumberOfPeriods(sentence)
 
     #counts number of periods in the url
 
-    fromReplyToCheck = fromReplyToComparison(emailFrom, emailReplyTo)
-    
+    if emailReplyTo is not None:
+        emailFrom = emailFrom.strip().lower()
+        emailReplyTo = emailReplyTo.strip().lower()
+        fromReplyToCheck = fromReplyToComparison(emailFrom, emailReplyTo)
+    else:
+        fromReplyToCheck = 0
     
     #print "ReplyTo and From Header Comparison: ", fromReplyToCheck
 
@@ -240,7 +244,7 @@ def assess(sentence, emailFrom, emailReplyTo):
     #print "HTML in body: ", isHtmlInBody(sentence2)
     #hRefs = returnHrefs(sentence2)
 
-    #print "hrefs: ", hRefs
+    #print "hrefs: ", hRefsemailFrom = emailFrom.strip().lower()
 
     #differenthRefs = returnDifferentHrefs(hRefs)
     #print "Different hRefs: ", differenthRefs
@@ -253,10 +257,15 @@ def assess(sentence, emailFrom, emailReplyTo):
     catObject['htmlInBody']= int(isHtmlInBody(sentence))
     catObject['mismatchedHref']= returnDifferentHrefs(returnHrefs(sentence))
     catObject['spoofedUrlCount']=spoofCount
-    
+    hrefCount = 0
+    if len(catObject['mismatchedHref']) >0:
+        for href in catObject['mismatchedHref'][0]:
+                catObject['mismatchedHref'][0][hrefCount] = str(catObject['mismatchedHref'][0][hrefCount]).replace('"', '\\"')
+                hrefCount+=1
+    #print catObject['mismatchedHref']
     return catObject
-#sentence = ("As one of our top customers we are providing 10% OFF the total of your next used book purchase g00gle.com from www.letthestoriesliveon.com . Please use the promotional code, TOPTENOFF at checkout. Limited to 1 use per customer. All books have free shipping within the contiguous 48 United States and there is no minimum purchase.We have millions of used books in stock that are up to 90% off MRSP and add tens of thousands of new items every day. Don't forget to check back frequently for new arrivals.")
+#sentence = ("Hi Mohammad,  I tried to use  <a href=\"google.com\">google.com</a> to find more information on Phantom.  However you can learn more about phantom by visiting: <a href=\"www.phantom.us\">www.phantom.us</a>Phantom QuestionQuestion")
 #emailFrom = 'sofyan.saputra@ge.com'
-#emailReplyTo = 'sofyan.s4putra@ge.com'
+#emailReplyTo = 'sofyan.saputra@ge.com'
 #print assess(sentence, emailFrom, emailReplyTo)
 

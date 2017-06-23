@@ -77,30 +77,63 @@ class NLPcaller:
             spoofCount = assessment['spoofedUrlCount']
             headerFraud = assessment['headerFraud']
             mismatchedHref = len(assessment['mismatchedHref'])
-
-            confidence = 0 #get confidence level of things based on indicators
             det = str(detector)[2]
-            if spoofCount>=1 and det == '1':
-                category = "phish - " + category
-                confidence = 1
-            elif spoofCount == 0 and det == '1':
-                category = "spam - " + category
-                confidence = .75
-            elif spoofCount>=1 and det == '0':
-                category = "phish -" + category
-                confidence = .5
-            elif spoofCount == 0 and det == '0':
-                confidence = .75
+            confidence = 0 #get confidence level of things based on indicators
+            priority = 0
+            
+##            if det == '1':
+##                if spoofCount >=1:
+##                    confidence =1
+##                    category = "phish - " + category
+##                    priority = 2
+##                else: #no spoof found
+##                    confidence = .75
+##                    category = "spam - " + category
+##                    priority =1
+##
+##            else: #det == 0
+##                if spoofCount >=1:
+##                    confidence =.5
+##                    category = "phish - " + category
+##                    priority = 2
+##                else: #no spoof found
+##                    confidence = .5
+##                    category = "spam - " + category
+##                    priority = 0
+                    
+            
+            if spoofCount != 0:
+                confidence = float(int(det) + spoofCount/spoofCount + int(headerFraud))/3
             else:
-                confidence = .66
+                confidence = float(int(det) + headerFraud) /3
 
-            print spoofCount
-            print confidence
-            print mismatchedHref
+            priority = int(confidence* 3)+targetWeight-1
+            risk = priority
+            contentRisk = confidence
+
+                
+##            if spoofCount>=1 and det == '1':
+##                category = "phish - " + category
+##                confidence = 1
+##            elif spoofCount == 0 and det == '1':
+##                category = "spam - " + category
+##                confidence = .75
+##            elif spoofCount>=1 and headerFraud == 1 and det == '0':
+##                category = "phish -" + category
+##                confidence = .5
+##            elif spoofCount == 0 and det == '0':
+##                confidence = .75
+##            else:
+##                confidence = .66
+
+            #print priority
+            #print confidence
+            
             
 
-            contentRisk = float(spoofCount + headerFraud + mismatchedHref)/3
-            risk = contentRisk * targetWeight * confidence
+            #contentRisk = float(spoofCount + headerFraud + mismatchedHref)/3
+            #risk = contentRisk * targetWeight * confidence
+
             
             assessment['spamDetected'] = det
             assessment['language'] = language

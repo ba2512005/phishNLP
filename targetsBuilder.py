@@ -37,13 +37,19 @@ def getTarget(email):
         tokenResp = json.loads(getToken().text)
         token = str(tokenResp['access_token'])
         empResp = json.loads(getEmployees(token,email).text)
-        employeeType = empResp['data'][0]['personType'].encode('ascii','ignore')
-        x = 1
-        weight = {
-          'Officer': lambda x: x * 2,
-          'Employee': lambda x: x * 1,
-          'Contractor': lambda x: x * 1
-        }[employeeType](x)
-        return employeeType, weight
-
+        #print empResp['totalResultCount']
+        if empResp['totalResultCount'] >= 1:
+                employeeType = empResp['data'][0]['personType'].encode('ascii','ignore')
+                x = 1
+                weight = {
+                  'Officer': lambda x: x * 2,
+                  'Employee': lambda x: x * 1,
+                  'Contractor': lambda x: x * 1
+                }[employeeType](x)
+                return employeeType, weight
+        else:
+                weight = 1
+                employeeType = 'Employee Not found'
+                return employeeType, weight
+        
 #print getTarget('jri.immelt@ge.com')
