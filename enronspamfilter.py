@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Jan 31 15:00:44 2017
-@author: Abhijeet Singh
-"""
 
 import os
 import numpy as np
