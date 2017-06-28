@@ -256,6 +256,12 @@ def assess(sentence, emailFrom, emailReplyTo):
     catObject['headerFraud']= fromReplyToCheck
     catObject['htmlInBody']= int(isHtmlInBody(sentence))
     catObject['mismatchedHref']= returnDifferentHrefs(returnHrefs(sentence))
+##    for hrefArray in catObject['mismatchedHref']:
+##            if len(hrefArray) >= 1:
+##                for href in hrefArray:
+##                        if len(href) >= 1:
+##                                
+    print catObject['mismatchedHref']
     catObject['spoofedUrlCount']=spoofCount
     hrefCount = 0
     if len(catObject['mismatchedHref']) >0:
@@ -264,7 +270,7 @@ def assess(sentence, emailFrom, emailReplyTo):
                 hrefCount+=1
     #print catObject['mismatchedHref']
     return catObject
-#sentence = ("Hi Mohammad,  I tried to use  <a href=\"google.com\">google.com</a> to find more information on Phantom.  However you can learn more about phantom by visiting: <a href=\"www.phantom.us\">www.phantom.us</a>Phantom QuestionQuestion")
+#sentence = ("Hi Mohammad,   <a href=\"badsite2.com\">voice.google.com</a>  I tried to use  <a href=\"googlee.com\">google.com</a> to find more information on Phantom.  However you can learn more about phantom by visiting: <a href=\"www.phantom.us\">www.phantom.us</a>Phantom QuestionQuestion")
 #emailFrom = 'sofyan.saputra@ge.com'
 #emailReplyTo = 'sofyan.saputra@ge.com'
 #print assess(sentence, emailFrom, emailReplyTo)

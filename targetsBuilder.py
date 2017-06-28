@@ -51,5 +51,5 @@ def getTarget(email):
                 weight = 1
                 employeeType = 'Employee Not found'
                 return employeeType, weight
-        
+        print employeeType
 #print getTarget('jri.immelt@ge.com')

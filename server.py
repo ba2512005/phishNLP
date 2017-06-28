@@ -64,19 +64,31 @@ class NLPcaller:
         try:
             inputs = json.loads(raw_json, encoding='cp1252')
             body = inputs['emailBody']
-            fromHeader = inputs['fromHeader']
-            toHeader = inputs['toHeader']
-            replyToHeader = inputs['replyToHeader']
+            if 'fromHeader' in inputs and 'toHeader' in inputs and 'replyToHeader' in inputs :
+                fromHeader = inputs['fromHeader']
+                toHeader = inputs['toHeader']
+                replyToHeader = inputs['replyToHeader']
+                assessment = getCategory.assess(body, fromHeader, replyToHeader)
+            else:
+                fromHeader = 'na@ge.com'
+                replyToHeader = 'na@ge.com'
+                assessment = getCategory.assess(body, fromHeader, replyToHeader)
+                
             target, targetWeight = targetsBuilder.getTarget(toHeader)
             
             language = detectLang.detectLang(body)  
-            detector = enronspamfilter.predicter(body)
-            assessment = getCategory.assess(body, fromHeader, replyToHeader)
+            detector,probability = enronspamfilter.predicter(body)
+            
+            
 
             category = assessment['category']
             spoofCount = assessment['spoofedUrlCount']
             headerFraud = assessment['headerFraud']
+            
+                
+            
             mismatchedHref = len(assessment['mismatchedHref'])
+            assessment['mismatchedHref'] = mismatchedHref
             det = str(detector)[2]
             confidence = 0 #get confidence level of things based on indicators
             priority = 0
@@ -136,6 +148,7 @@ class NLPcaller:
 
             
             assessment['spamDetected'] = det
+            assessment['spamProb'] = probability
             assessment['language'] = language
             assessment['targetType'] = target
             assessment['confidence'] = confidence
